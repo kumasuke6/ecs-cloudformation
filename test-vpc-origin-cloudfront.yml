@@ -2,17 +2,48 @@ AWSTemplateFormatVersion: '2010-09-09'
 Description: '---'
 
 Parameters:
+  PJPrefix:
+    Type: String
+    Default: stg
+    AllowedValues:
+      - stg
+      - prd
+    Description: prefix stg or prd
   VpcCidr:
     Type: String
     Default: 10.0.0.0/16
-  PrivateSubnet1Cidr:
+  PublicSubnetACidr:
     Type: String
     Default: 10.0.1.0/24
-  PrivateSubnet2Cidr:
+  PublicSubnetCCidr:
     Type: String
     Default: 10.0.2.0/24
+  PublicSubnetDCidr:
+    Type: String
+    Default: 10.0.3.0/24
+  PrivateSubnetACidr:
+    Type: String
+    Default: 10.0.4.0/24
+  PrivateSubnetCCidr:
+    Type: String
+    Default: 10.0.5.0/24
+  PrivateSubnetDCidr:
+    Type: String
+    Default: 10.0.6.0/24
+  SecureSubnetACidr:
+    Type: String
+    Default: 10.0.7.0/24
+  SecureSubnetCCidr:
+    Type: String
+    Default: 10.0.8.0/24
+  SecureSubnetDCidr:
+    Type: String
+    Default: 10.0.9.0/24
 
 Resources:
+  # ------------------------------------------------------------#
+  # VPC
+  # ------------------------------------------------------------#
   VPC:
     Type: AWS::EC2::VPC
     Properties:
@@ -21,60 +52,254 @@ Resources:
       EnableDnsSupport: true
       Tags:
         - Key: Name
-          Value: Private VPC
+          Value: !Sub ${PJPrefix}-vpc
 
-  PrivateSubnet1:
+  # ------------------------------------------------------------#
+  # Subnet
+  # ------------------------------------------------------------#
+  PublicSubnetA:
     Type: AWS::EC2::Subnet
     Properties:
       VpcId: !Ref VPC
-      CidrBlock: !Ref PrivateSubnet1Cidr
-      AvailabilityZone: !Select
-        - 0
-        - !GetAZs ''
+      CidrBlock: !Ref PublicSubnetACidr
+      AvailabilityZone: ap-northeast-1a
       Tags:
         - Key: Name
-          Value: Private Subnet 1
+          Value: !Sub ${PJPrefix}-public-subnet-a
 
-  PrivateSubnet2:
+  PublicSubnetC:
     Type: AWS::EC2::Subnet
     Properties:
       VpcId: !Ref VPC
-      CidrBlock: !Ref PrivateSubnet2Cidr
-      AvailabilityZone: !Select
-        - 1
-        - !GetAZs ''
+      CidrBlock: !Ref PublicSubnetCCidr
+      AvailabilityZone: ap-northeast-1c
       Tags:
         - Key: Name
-          Value: Private Subnet 2
+          Value: !Sub ${PJPrefix}-public-subnet-c
 
-  PrivateRouteTable1:
+  PublicSubnetD:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: !Ref PublicSubnetDCidr
+      AvailabilityZone: ap-northeast-1d
+      Tags:
+        - Key: Name
+          Value: !Sub ${PJPrefix}-public-subnet-d
+
+  PrivateSubnetA:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: !Ref PrivateSubnetACidr
+      AvailabilityZone: ap-northeast-1a
+      Tags:
+        - Key: Name
+          Value: !Sub ${PJPrefix}-private-subnet-a
+
+  PrivateSubnetC:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: !Ref PrivateSubnetCCidr
+      AvailabilityZone: ap-northeast-1c
+      Tags:
+        - Key: Name
+          Value: !Sub ${PJPrefix}-private-subnet-c
+
+  PrivateSubnetD:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: !Ref PrivateSubnetDCidr
+      AvailabilityZone: ap-northeast-1d
+      Tags:
+        - Key: Name
+          Value: !Sub ${PJPrefix}-private-subnet-d
+
+  SecureSubnetA:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: !Ref SecureSubnetACidr
+      AvailabilityZone: ap-northeast-1a
+      Tags:
+        - Key: Name
+          Value: !Sub ${PJPrefix}-secure-subnet-a
+
+  SecureSubnetC:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: !Ref SecureSubnetCCidr
+      AvailabilityZone: ap-northeast-1c
+      Tags:
+        - Key: Name
+          Value: !Sub ${PJPrefix}-secure-subnet-c
+
+  SecureSubnetD:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: !Ref SecureSubnetDCidr
+      AvailabilityZone: ap-northeast-1d
+      Tags:
+        - Key: Name
+          Value: !Sub ${PJPrefix}-secure-subnet-d
+
+  # ------------------------------------------------------------#
+  # RouteTable
+  # ------------------------------------------------------------#
+  PublicRouteTableA:
     Type: AWS::EC2::RouteTable
     Properties:
       VpcId: !Ref VPC
       Tags:
         - Key: Name
-          Value: Private Route Table 1
+          Value: !Sub ${PJPrefix}-public-route-a
 
-  PrivateRouteTable2:
+  PublicRouteTableC:
     Type: AWS::EC2::RouteTable
     Properties:
       VpcId: !Ref VPC
       Tags:
         - Key: Name
-          Value: Private Route Table 2
+          Value: !Sub ${PJPrefix}-public-route-c
 
-  PrivateSubnet1RouteTableAssociation:
+  PublicRouteTableD:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub ${PJPrefix}-public-route-d
+
+  PrivateRouteTableA:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub ${PJPrefix}-private-route-a
+
+  PrivateRouteTableC:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub ${PJPrefix}-private-route-c
+
+  PrivateRouteTableD:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub ${PJPrefix}-private-route-d
+
+  SecureRouteTableA:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub ${PJPrefix}-secure-route-a
+
+  SecureRouteTableC:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub ${PJPrefix}-secure-route-c
+
+  SecureRouteTableD:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub ${PJPrefix}-secure-route-d
+
+  PublicRouteA:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref PublicRouteTableA
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+
+  PublicRouteC:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref PublicRouteTableC
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+
+  PublicRouteD:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref PublicRouteTableD
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+
+  PublicSubnetARouteTableAssociation:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
-      SubnetId: !Ref PrivateSubnet1
-      RouteTableId: !Ref PrivateRouteTable1
+      SubnetId: !Ref PublicSubnetA
+      RouteTableId: !Ref PublicRouteTableA
 
-  PrivateSubnet2RouteTableAssociation:
+  PublicSubnetCRouteTableAssociation:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
-      SubnetId: !Ref PrivateSubnet2
-      RouteTableId: !Ref PrivateRouteTable2
+      SubnetId: !Ref PublicSubnetC
+      RouteTableId: !Ref PublicRouteTableC
 
+  PublicSubnetDRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnetD
+      RouteTableId: !Ref PublicRouteTableD
+
+  PrivateSubnetARouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PrivateSubnetA
+      RouteTableId: !Ref PrivateRouteTableA
+
+  PrivateSubnetCRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PrivateSubnetC
+      RouteTableId: !Ref PrivateRouteTableC
+
+  PrivateSubnetDRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PrivateSubnetD
+      RouteTableId: !Ref PrivateRouteTableD
+
+  SecureSubnetARouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref SecureSubnetA
+      RouteTableId: !Ref SecureRouteTableA
+
+  SecureSubnetCRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref SecureSubnetC
+      RouteTableId: !Ref SecureRouteTableC
+
+  SecureSubnetDRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref SecureSubnetD
+      RouteTableId: !Ref SecureRouteTableD
+
+  # ------------------------------------------------------------#
+  # Security Group
+  # ------------------------------------------------------------#
   AlbSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
@@ -85,6 +310,102 @@ Resources:
           FromPort: 80
           ToPort: 80
           CidrIp: !Ref VpcCidr
+      Tags:
+        - Key: Name
+          Value: !Sub ${PJPrefix}-sg-alb
+
+  ECSSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: for ecs
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - FromPort: 80
+          IpProtocol: tcp
+          SourceSecurityGroupId: !Ref AlbSecurityGroup
+          ToPort: 80
+      Tags:
+        - Key: Name
+          Value: !Sub ${PJPrefix}-sg-ecs
+
+  VPCEndpointSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: for VPC Endpoint
+      VpcId: !Ref VPC
+      SecurityGroupEgress:
+        - CidrIp: 0.0.0.0/0
+          FromPort: -1
+          IpProtocol: -1
+          ToPort: -1
+      SecurityGroupIngress:
+        - SourceSecurityGroupId: !Ref ECSSecurityGroup
+          FromPort: 443
+          IpProtocol: tcp
+          ToPort: 443
+      Tags:
+        - Key: Name
+          Value: !Sub ${PJPrefix}-sg-vpc-endpoint
+
+  # ------------------------------------------------------------#
+  # VPC Endpoint
+  # ------------------------------------------------------------# 
+  S3Endpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      RouteTableIds:
+        - !Ref PrivateRouteTableA
+      ServiceName: !Sub com.amazonaws.${AWS::Region}.s3
+      VpcEndpointType: Gateway
+      VpcId: !Ref VPC
+
+  ECRdkrEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      VpcEndpointType: Interface
+      PrivateDnsEnabled: true
+      ServiceName: !Sub com.amazonaws.${AWS::Region}.ecr.dkr
+      VpcId: !Ref VPC
+      SubnetIds:
+        - !Ref PrivateSubnetA
+      SecurityGroupIds:
+        - !Ref VPCEndpointSG
+
+  ECRapiEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      VpcEndpointType: Interface
+      PrivateDnsEnabled: true
+      ServiceName: !Sub com.amazonaws.${AWS::Region}.ecr.api
+      VpcId: !Ref VPC
+      SubnetIds:
+        - !Ref PrivateSubnetA
+      SecurityGroupIds:
+        - !Ref VPCEndpointSG
+
+  LogsEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      VpcEndpointType: Interface
+      PrivateDnsEnabled: true
+      ServiceName: !Sub com.amazonaws.${AWS::Region}.logs
+      VpcId: !Ref VPC
+      SubnetIds:
+        - !Ref PrivateSubnetA
+      SecurityGroupIds:
+        - !Ref VPCEndpointSG
+
+  SsmMessagesEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      VpcEndpointType: Interface
+      PrivateDnsEnabled: true
+      ServiceName: !Sub com.amazonaws.${AWS::Region}.ssmmessages
+      VpcId: !Ref VPC
+      SubnetIds:
+        - !Ref PrivateSubnetA
+      SecurityGroupIds:
+        - !Ref VPCEndpointSG
 
   InternalALB:
     Type: AWS::ElasticLoadBalancingV2::LoadBalancer
@@ -93,24 +414,55 @@ Resources:
       SecurityGroups:
         - !Ref AlbSecurityGroup
       Subnets:
-        - !Ref PrivateSubnet1
-        - !Ref PrivateSubnet2
+        - !Ref PrivateSubnetA
+        - !Ref PrivateSubnetC
+        - !Ref PrivateSubnetD
       Type: application
+
+  TargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      HealthCheckEnabled: true
+      HealthCheckIntervalSeconds: 30
+      HealthCheckPath: /
+      HealthCheckPort: 80
+      HealthCheckProtocol: HTTP
+      HealthCheckTimeoutSeconds: 5
+      HealthyThresholdCount: 5
+      IpAddressType: ipv4
+      Matcher:
+        HttpCode: 200
+      Name: !Sub ${PJPrefix}-ecs-tg
+      Port: 80
+      Protocol: HTTP
+      ProtocolVersion: HTTP1
+      Tags:
+        - Key: Name
+          Value: !Sub ${PJPrefix}-ecs-tg
+      TargetType: ip
+      UnhealthyThresholdCount: 2
+      VpcId: !Ref VPC
 
   AlbListener:
     Type: AWS::ElasticLoadBalancingV2::Listener
     Properties:
       DefaultActions:
-        - Type: fixed-response
-          FixedResponseConfig:
-            ContentType: text/plain
-            MessageBody: Hello from ALB!
-            StatusCode: '200'
+        - TargetGroupArn: !Ref TargetGroup
+          Type: forward
       LoadBalancerArn: !Ref InternalALB
       Port: 80
       Protocol: HTTP
-    DependsOn:
-      - InternalALB
+
+  # ------------------------------------------------------------#
+  # ECR
+  # ------------------------------------------------------------# 
+  ECR:
+    Type: AWS::ECR::Repository
+    Properties:
+      EmptyOnDelete: true
+      EncryptionConfiguration:
+        EncryptionType: AES256
+      RepositoryName: !Sub ${PJPrefix}-ecr
 
   HogeVpcOrigin:
     Type: AWS::CloudFront::VpcOrigin
