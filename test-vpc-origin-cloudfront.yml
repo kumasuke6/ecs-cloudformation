@@ -453,17 +453,6 @@ Resources:
       Port: 80
       Protocol: HTTP
 
-  # ------------------------------------------------------------#
-  # ECR
-  # ------------------------------------------------------------# 
-  ECR:
-    Type: AWS::ECR::Repository
-    Properties:
-      EmptyOnDelete: true
-      EncryptionConfiguration:
-        EncryptionType: AES256
-      RepositoryName: !Sub ${PJPrefix}-ecr
-
   HogeVpcOrigin:
     Type: AWS::CloudFront::VpcOrigin
     Properties:
@@ -511,3 +500,129 @@ Resources:
       IpProtocol: tcp
       SourcePrefixListId: pl-58a04531
       GroupId: !Ref AlbSecurityGroup
+
+  # ------------------------------------------------------------#
+  # CloudWatch Logs
+  # ------------------------------------------------------------# 
+  ECSLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /ecs/logs/${PJPrefix}-ecs-log
+
+  # ------------------------------------------------------------#
+  # IAM
+  # ------------------------------------------------------------# 
+  TaskExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - ecs-tasks.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
+      RoleName: !Sub ${PJPrefix}-ecs-task-execution-role
+
+  TaskRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - ecs-tasks.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      RoleName: !Sub ${PJPrefix}-ecs-task-role
+
+  TaskRolePolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: !Sub ${PJPrefix}-ecs-task-role-policy
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action:
+              - ssmmessages:CreateControlChannel
+              - ssmmessages:CreateDataChannel
+              - ssmmessages:OpenControlChannel
+              - ssmmessages:OpenDataChannel
+            Resource: '*'
+      Roles:
+        - !Ref TaskRole
+
+  # ------------------------------------------------------------#
+  # ECR
+  # ------------------------------------------------------------# 
+  ECR:
+    Type: AWS::ECR::Repository
+    Properties:
+      EmptyOnDelete: true
+      EncryptionConfiguration:
+        EncryptionType: AES256
+      RepositoryName: !Sub ${PJPrefix}-ecr
+
+  # ------------------------------------------------------------#
+  # ECS
+  # ------------------------------------------------------------# 
+  ECSCluster:
+    Type: AWS::ECS::Cluster
+    Properties:
+      CapacityProviders:
+        - FARGATE
+      ClusterName: !Sub ${PJPrefix}-ecs-cluster
+      DefaultCapacityProviderStrategy:
+        - CapacityProvider: FARGATE
+          Weight: 1
+
+  ECSTaskDef:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      ContainerDefinitions:
+        - Image: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${PJPrefix}-ecr:latest
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Sub /ecs/logs/${PJPrefix}-ecs-log
+              awslogs-region: !Ref AWS::Region
+              awslogs-stream-prefix: !Sub ${PJPrefix}-ecs-log
+          Name: !Sub ${PJPrefix}-ecs-task
+          PortMappings:
+            - ContainerPort: 80
+              HostPort: 80
+      Cpu: 256
+      ExecutionRoleArn: !Ref TaskExecutionRole
+      Family: !Sub ${PJPrefix}-ecs-task-def
+      Memory: 512
+      NetworkMode: awsvpc
+      RequiresCompatibilities:
+        - FARGATE
+      TaskRoleArn: !Ref TaskRole
+
+  ECSService:
+    Type: AWS::ECS::Service
+    Properties:
+      Cluster: !Ref ECSCluster
+      DesiredCount: 1
+      EnableExecuteCommand: true
+      LoadBalancers:
+        - ContainerName: !Sub ${PJPrefix}-ecs-task
+          ContainerPort: 80
+          TargetGroupArn: !Ref TargetGroup
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          SecurityGroups:
+            - !Ref ECSSecurityGroup
+          Subnets:
+            - !Ref PrivateSubnetA
+            - !Ref PrivateSubnetC
+      ServiceName: !Sub ${PJPrefix}-ecs-service
+      TaskDefinition: !Ref ECSTaskDef
