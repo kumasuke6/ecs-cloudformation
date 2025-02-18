@@ -39,6 +39,9 @@ Parameters:
   SecureSubnetDCidr:
     Type: String
     Default: 10.0.9.0/24
+  ECRRepositoryUri:
+    Type: String
+    Description: ECR Repository URI
 
 Resources:
   # ------------------------------------------------------------#
@@ -560,17 +563,6 @@ Resources:
         - !Ref TaskRole
 
   # ------------------------------------------------------------#
-  # ECR
-  # ------------------------------------------------------------# 
-  ECR:
-    Type: AWS::ECR::Repository
-    Properties:
-      EmptyOnDelete: true
-      EncryptionConfiguration:
-        EncryptionType: AES256
-      RepositoryName: !Sub ${PJPrefix}-ecr
-
-  # ------------------------------------------------------------#
   # ECS
   # ------------------------------------------------------------# 
   ECSCluster:
@@ -587,7 +579,7 @@ Resources:
     Type: AWS::ECS::TaskDefinition
     Properties:
       ContainerDefinitions:
-        - Image: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${PJPrefix}-ecr:latest
+        - Image: !Sub ${ECRRepositoryUri}:latest
           LogConfiguration:
             LogDriver: awslogs
             Options:
@@ -609,6 +601,8 @@ Resources:
 
   ECSService:
     Type: AWS::ECS::Service
+    DependsOn:
+      - AlbListener
     Properties:
       Cluster: !Ref ECSCluster
       DesiredCount: 1

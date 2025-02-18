@@ -1,0 +1,25 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Create ECR repository only'
+
+Parameters:
+  PJPrefix:
+    Type: String
+    Default: stg
+    AllowedValues:
+      - stg
+      - prd
+    Description: prefix stg or prd
+
+Resources:
+  ECR:
+    Type: AWS::ECR::Repository
+    Properties:
+      EmptyOnDelete: true
+      EncryptionConfiguration:
+        EncryptionType: AES256
+      RepositoryName: !Sub ${PJPrefix}-ecr
+
+Outputs:
+  ECRRepositoryUri:
+    Description: "ECR Repository URI"
+    Value: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${PJPrefix}-ecr"
